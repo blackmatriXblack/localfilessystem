@@ -267,15 +267,15 @@ SHA-256. `F5` refreshes, `Ctrl+Q` quits.
 
 ```
 This PC
-├── C:\                     free 82.37 GB of 392.13 GB
+├── C:\                     
 │   ├── AMD\
 │   ├── cos_build\
 │   │   ├── string.c
 │   │   ├── test.c
 │   │   └── test.o
 │   └── cygwin64\
-├── D:\                     free 1.21 TB of 1.82 TB
-└── E:\                     free 74.70 GB of 83.70 GB
+├── D:\                     
+└── E:\                     
 ```
 
 ### Why `Max/folder` matters
