@@ -254,11 +254,7 @@ for e in search.find(search.FindCriteria(root=".", extensions=[".py"])):
 ```
 localfilessystem/
 ├── fileforge.py            # single-file launcher
-├── pyproject.toml          # pip package definition (fileforge-toolkit)
-├── smoke_test.py           # 56-check CLI end-to-end test suite
-├── gui_smoke.py            # 17-check GUI end-to-end test suite
 ├── README.md
-├── dist/                   # built wheel + sdist (pip installable)
 └── fileforge/
     ├── __init__.py
     ├── __main__.py         # enables `python -m fileforge`
