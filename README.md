@@ -270,12 +270,6 @@ localfilessystem/
     └── utils.py            # shared helpers, platform detection, output
 ```
 
-## Testing
-
-```bash
-python smoke_test.py        # CLI:  TOTAL 56 passed, 0 failed
-python gui_smoke.py         # GUI:  TOTAL 17 passed, 0 failed (needs tkinter)
-```
 
 ## License
 
