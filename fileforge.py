@@ -57,82 +57,51 @@ APP = "fileforge"
 # ==========================================================================
 # Command catalogue: (group, [(name, one-line help), ...])
 # ==========================================================================
+# The catalogue now focuses on the whole-computer ("This PC") workflow.
+# The classic single-directory commands keep working, they are just not
+# advertised any more -- `python fileforge.py legacy` lists them.
 CATALOG = [
-    ("Browse & inspect", [
-        ("ls",              "List directory contents"),
-        ("tree",            "Live directory tree (no cache, streaming)"),
-        ("tree-classic",    "Original ASCII tree from the classic CLI"),
-        ("stat",            "Detailed metadata (mode, times, inode, MIME)"),
-        ("filetype",        "Content-based MIME detection"),
-        ("free",            "Free / used / total space on a volume"),
-        ("drives",          "List all drives / mount points + free space"),
+    ("This PC - open", [
+        ("computerui",      "Open the This PC window (all drives, live)"),
+        ("treeui",          "Tk tree explorer - This PC when no path is given"),
+        ("computer",        "Print the whole machine as one tree"),
+        ("computertree",    "Whole-machine tree with extra filters"),
     ]),
-    ("Whole computer (\"This PC\")", [
-        ("computer",        "Print the entire machine as one tree"),
-        ("computerui",      "Open the This PC window (all drives)"),
-        ("treeui",          "Tkinter tree explorer (This PC when no path)"),
+    ("This PC - inventory", [
+        ("computerinfo",    "Machine + volume overview (capacity, used, free)"),
+        ("computerdrives",  "Every drive / mount point with a usage bar"),
+        ("computerscan",    "One full scan: counts, bytes, per-volume table"),
+        ("computerexport",  "Export the whole machine to JSON / CSV / TXT"),
     ]),
-    ("Disk usage", [
-        ("treemap",         "Terminal disk-usage block map / bar chart"),
-        ("du",              "Directory size breakdown"),
-        ("largest",         "Largest files"),
-        ("newest",          "Most recently modified files"),
-        ("oldest",          "Least recently modified files"),
-        ("empty",           "Empty files and directories"),
-        ("broken-links",    "Dangling symlinks"),
-        ("ext-summary",     "Count / size grouped by extension"),
-        ("summary",         "One-shot report for a directory"),
+    ("This PC - what is big", [
+        ("computerdirs",    "Biggest directories anywhere on the machine"),
+        ("computerlarge",   "Biggest files anywhere on the machine"),
+        ("computermap",     "Terminal block map of every volume"),
+        ("computerext",     "Size / count grouped by file extension"),
     ]),
-    ("File content", [
-        ("cat",             "Print a file"),
-        ("write",           "Write / append text to a file"),
-        ("touch",           "Create an empty file or update mtime"),
-        ("wc",              "Line / word / byte count"),
-        ("replace",         "Find & replace (plain or regex, --dry-run)"),
-        ("convert-encoding", "Re-encode a text file"),
+    ("This PC - by age", [
+        ("computernew",     "Most recently modified files"),
+        ("computerold",     "Least recently modified files"),
+        ("computerempty",   "Empty files and empty directories"),
+        ("computerstats",   "One-shot statistical report (buckets, ages, top)"),
     ]),
-    ("Manage", [
-        ("cp",              "Copy files / directories"),
-        ("mv",              "Move or rename"),
-        ("rm",              "Remove files / directories"),
-        ("mkdir",           "Create directories"),
-        ("rename",          "Rename one path"),
-        ("rename-batch",    "Bulk rename with a pattern"),
-        ("symlink",         "Create a symbolic link"),
-        ("readlink",        "Resolve a symbolic link"),
+    ("This PC - search & integrity", [
+        ("computerfind",    "Find files by name / glob across every drive"),
+        ("computergrep",    "Search file contents across every drive"),
+        ("computerdupes",   "Duplicate files across every drive"),
+        ("computertemp",    "Temporary / cache / junk files"),
     ]),
-    ("Search", [
-        ("find",            "Multi-criteria file search"),
-        ("grep",            "Recursive content search"),
+    ("This PC - track changes", [
+        ("computersnapshot", "Save a snapshot (path + size + mtime)"),
+        ("computerdiff",     "Diff two snapshots (added / removed / changed)"),
+        ("computerwatch",    "Live watch: created / deleted / modified"),
     ]),
-    ("Integrity", [
-        ("hash",            "Checksum one or more files"),
-        ("manifest",        "Write a JSON checksum manifest"),
-        ("verify",          "Verify a tree against a manifest"),
-        ("compare",         "Byte-compare two files"),
-        ("dupes",           "Find duplicate files"),
+    ("This PC - safety", [
+        ("computeraudit",   "Permission audit (world-writable, setuid, setgid)"),
     ]),
-    ("Archive & sync", [
-        ("archive-create",  "Create zip / tar / tar.gz / tar.bz2 / tar.xz"),
-        ("archive-extract", "Extract an archive (zip-slip safe)"),
-        ("archive-list",    "List archive contents"),
-        ("gzip",            "gzip / gunzip a single file"),
-        ("split",           "Split a file into chunks"),
-        ("merge",           "Rejoin chunks"),
-        ("sync",            "Incremental mirror of a directory"),
-    ]),
-    ("Security", [
-        ("chmod",           "Change permissions (octal or symbolic)"),
-        ("perms",           "List permissions"),
-        ("world-writable",  "Audit world-writable paths"),
-        ("shred",           "Secure delete (overwrite then unlink)"),
-        ("encrypt",         "Encrypt a file with a passphrase"),
-        ("decrypt",         "Decrypt a file"),
-    ]),
-    ("Applications", [
-        ("gui",             "Full Tkinter GUI (8 tabs)"),
-        ("shell",           "Interactive shell (cd/pwd/history/!cmd)"),
+    ("Help", [
         ("help",            "Show this command list"),
+        ("legacy",          "List the hidden classic (single-directory) commands"),
     ]),
 ]
 
@@ -140,6 +109,7 @@ CATALOG = [
 ALIASES = {
     "tree-gui": "treeui",
     "explorer": "treeui",
+    "pcexplorer": "treeui",
     "pc": "computer",
     "thispc": "computer",
     "this-pc": "computer",
@@ -149,12 +119,50 @@ ALIASES = {
     "thispcui": "computerui",
     "this-pc-ui": "computerui",
     "computer-gui": "computerui",
-    "roots": "drives",
-    "mounts": "drives",
-    "volumes": "drives",
+    "pctree": "computertree",
+    "pcinfo": "computerinfo",
+    "pcsysinfo": "computerinfo",
+    "pcdrives": "computerdrives",
+    "pcvolumes": "computerdrives",
+    "roots": "computerdrives",
+    "mounts": "computerdrives",
+    "drives": "computerdrives",
+    "pcscan": "computerscan",
+    "pcexport": "computerexport",
+    "pcdirs": "computerdirs",
+    "pcbigdirs": "computerdirs",
+    "pclarge": "computerlarge",
+    "pcbig": "computerlarge",
+    "pcmap": "computermap",
     "map": "treemap",
     "diskmap": "treemap",
     "du-map": "treemap",
+    "pcext": "computerext",
+    "pcnew": "computernew",
+    "pcrecent": "computernew",
+    "pcold": "computerold",
+    "pcempty": "computerempty",
+    "pcstats": "computerstats",
+    "pcfind": "computerfind",
+    "pcgrep": "computergrep",
+    "pcdupes": "computerdupes",
+    "pcduplicates": "computerdupes",
+    "pctemp": "computertemp",
+    "pcjunk": "computertemp",
+    "pcsnapshot": "computersnapshot",
+    "pcdiff": "computerdiff",
+    "pcwatch": "computerwatch",
+    "pcaudit": "computeraudit",
+}
+
+# Commands implemented by fileforge.computerkit (the "This PC" analysis set).
+COMPUTERKIT_COMMANDS = {
+    "computerinfo", "computerdrives", "computerscan", "computertree",
+    "computerdirs", "computerlarge", "computermap", "computerext",
+    "computernew", "computerold", "computerempty", "computerstats",
+    "computerfind", "computergrep", "computerdupes", "computertemp",
+    "computerexport", "computersnapshot", "computerdiff", "computerwatch",
+    "computeraudit",
 }
 
 # Commands implemented inside fileforge.cli (the classic 40+ command set).
@@ -166,12 +174,72 @@ CLASSIC_COMMANDS = {
     "archive-list", "gzip", "split", "merge", "sync", "chmod", "perms",
     "world-writable", "shred", "encrypt", "decrypt", "wc", "replace",
     "convert-encoding", "symlink", "readlink", "stat", "filetype", "free",
-    "shell", "gui",
+    "shell",
 }
 
 # Kept for backwards compatibility with earlier revisions of this launcher.
 TREE_COMMANDS = {"tree", "treeui", "tree-gui", "treemap", "drives", "roots",
                  "computer", "pc", "thispc", "computerui", "pcgui"}
+
+# The classic commands are still reachable, just not advertised in `help`.
+LEGACY_CATALOG = [
+    ("Browse & inspect", [
+        ("ls", "List directory contents"),
+        ("tree", "Live directory tree for one root"),
+        ("stat", "Detailed metadata (mode, times, inode, MIME)"),
+        ("filetype", "Content-based MIME detection"),
+        ("free", "Free / used / total space on a volume"),
+    ]),
+    ("Disk usage", [
+        ("du", "Directory size breakdown"),
+        ("summary", "One-shot report for a directory"),
+        ("broken-links", "Dangling symlinks"),
+    ]),
+    ("File content", [
+        ("cat", "Print a file"),
+        ("write", "Write / append text to a file"),
+        ("touch", "Create an empty file or update mtime"),
+        ("wc", "Line / word / byte count"),
+        ("replace", "Find & replace (plain or regex, --dry-run)"),
+        ("convert-encoding", "Re-encode a text file"),
+    ]),
+    ("Manage", [
+        ("cp", "Copy files / directories"),
+        ("mv", "Move or rename"),
+        ("rm", "Remove files / directories"),
+        ("mkdir", "Create directories"),
+        ("rename", "Rename one path"),
+        ("rename-batch", "Bulk rename with a pattern"),
+        ("symlink", "Create a symbolic link"),
+        ("readlink", "Resolve a symbolic link"),
+    ]),
+    ("Search", [("find", "Multi-criteria file search"),
+                ("grep", "Recursive content search")]),
+    ("Integrity", [
+        ("hash", "Checksum one or more files"),
+        ("manifest", "Write a JSON checksum manifest"),
+        ("verify", "Verify a tree against a manifest"),
+        ("compare", "Byte-compare two files"),
+        ("dupes", "Find duplicate files in one tree"),
+    ]),
+    ("Archive & sync", [
+        ("archive-create", "Create zip / tar / tar.gz / tar.bz2 / tar.xz"),
+        ("archive-extract", "Extract an archive (zip-slip safe)"),
+        ("archive-list", "List archive contents"),
+        ("gzip", "gzip / gunzip a single file"),
+        ("split", "Split a file into chunks"),
+        ("merge", "Rejoin chunks"),
+        ("sync", "Incremental mirror of a directory"),
+    ]),
+    ("Security", [
+        ("chmod", "Change permissions (octal or symbolic)"),
+        ("perms", "List permissions"),
+        ("shred", "Secure delete (overwrite then unlink)"),
+        ("encrypt", "Encrypt a file with a passphrase"),
+        ("decrypt", "Decrypt a file"),
+    ]),
+    ("Applications", [("shell", "Interactive shell (cd/pwd/history/!cmd)")]),
+]
 
 
 def _all_names():
@@ -229,6 +297,12 @@ def _run_computerui(rest) -> int:
     return pc_main(rest)
 
 
+def _run_computerkit(cmd, rest) -> int:
+    """Forward to the "This PC" analysis commands in fileforge.computerkit."""
+    from fileforge.computerkit import run as kit_run
+    return kit_run(cmd, rest)
+
+
 def _show_roots() -> int:
     from fileforge.treeview import system_roots
     from fileforge.utils import free_space, human_size
@@ -245,22 +319,27 @@ def _show_roots() -> int:
     return 0
 
 
-def _print_catalog(stream=None) -> None:
+def _print_catalog(stream=None, catalog=None) -> None:
     out = stream or sys.stdout
-    out.write(f"{APP} - portable local file-system toolkit\n")
+    table = catalog or CATALOG
+    out.write(f"{APP} - portable local file-system toolkit (This PC edition)\n")
     out.write("Usage: python fileforge.py <command> [options]\n")
     out.write("       python fileforge.py help              show this list\n")
+    out.write("       python fileforge.py computerui        open This PC\n")
     out.write("       python fileforge.py <command> --help  "
               "options for one command\n\n")
-    width = max(len(n) for _g, entries in CATALOG for n, _h in entries)
-    for group, entries in CATALOG:
+    width = max(len(n) for _g, entries in table for n, _h in entries)
+    for group, entries in table:
         out.write(f"{group}\n")
         for name, help_text in entries:
             extra = "".join(f" /{a}" for a, t in ALIASES.items() if t == name)
             out.write(f"  {name:<{width}}  {help_text}{extra}\n")
         out.write("\n")
-    out.write("Tip: every command supports --help.  Typos are auto-corrected\n")
-    out.write("     (e.g. `computrui` runs `computerui`).\n")
+    if catalog is None:
+        out.write("Tip: every command supports --help.  Typos are auto-corrected\n")
+        out.write("     (e.g. `computrui` runs `computerui`).\n")
+        out.write("     Classic commands (ls, find, hash, cp, ...) still work:\n")
+        out.write("     `python fileforge.py legacy` lists them.\n")
 
 
 def _dispatch(args) -> int:
@@ -272,11 +351,16 @@ def _dispatch(args) -> int:
         from fileforge import __version__
         print(f"{APP} {__version__}")
         return 0
+    if args[0] in ("legacy", "classic"):
+        _print_catalog(catalog=LEGACY_CATALOG)
+        return 0
 
     cmd, rest = args[0], list(args[1:])
     cmd = ALIASES.get(cmd, cmd)
 
     try:
+        if cmd in COMPUTERKIT_COMMANDS:
+            return _run_computerkit(cmd, rest)
         if cmd in ("-h", "--help"):
             _print_catalog()
             return 0
