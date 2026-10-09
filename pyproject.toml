@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locals_filesystem"
-version = "5.0.0"
+version = "6.0.0"
 description = "Portable local file-system toolkit (CLI + interactive shell + Tkinter GUI) for Linux, Windows and macOS. Pure standard library, zero dependencies."
 readme = "README.md"
 requires-python = ">=3.8"
