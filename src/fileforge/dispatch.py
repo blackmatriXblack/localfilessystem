@@ -1,63 +1,42 @@
 #!/usr/bin/env python3
 """
-fileforge - single-file launcher (complete command registry)
+fileforge.dispatch - unified command registry and dispatcher
 ============================================================
 
-Runs the portable file-system toolkit from the repository root.
+One place that knows **every** command shipped by fileforge:
 
-    python fileforge.py <command> [options]
-    python fileforge.py help               # list every command
-    python fileforge.py computerui         # "This PC" window (all drives)
-    python fileforge.py shell
-    python fileforge.py --help
+* the classic CLI commands implemented in ``fileforge.cli``
+* the live file-tree commands (``fileforge.treeview``)
+* the Tkinter tree explorer (``fileforge.treeui``)
+* the terminal disk-usage chart (``fileforge.treemap``)
+* the whole-computer / "This PC" engine and window
+  (``fileforge.computer``, ``fileforge.computerview``)
 
-Every command shipped by the toolkit is registered here:
+It also understands aliases (``pc`` -> ``computer``) and gently corrects
+typos (``computrui`` -> ``computerui``) instead of printing
+"invalid choice".
 
-  * the classic CLI commands (fileforge.cli)      - ls / find / grep / hash ...
-  * the live file tree      (fileforge.treeview)  - tree / drives
-  * the Tkinter explorer    (fileforge.treeui)    - treeui
-  * the disk-usage chart    (fileforge.treemap)   - treemap
-  * the whole-computer view (fileforge.computer,
-                             fileforge.computerview) - computer / computerui
+This module is the console-script entry point::
 
-Aliases (pc, thispc, pcgui, explorer, ...) and typo correction
-("computrui" -> "computerui") are handled as well.
+    fileforge = fileforge.dispatch:main
 
-Works on Linux, Windows and macOS with no third-party dependencies.
+``fileforge.py`` in the repository root carries the very same registry so the
+launcher keeps working standalone.
 """
 
 from __future__ import annotations
 
 import difflib
-import os
 import sys
 from pathlib import Path
-
-# Make the package importable no matter where the script is invoked from.
-HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:
-    sys.path.insert(0, str(HERE))
-
-# --- added: the package also lives under ./src (setuptools src-layout) ----
-SRC = HERE / "src"
-if SRC.is_dir() and str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-# Best effort: force UTF-8 output on Windows terminals.
-if os.name == "nt":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
-        sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
-    except Exception:
-        pass
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 APP = "fileforge"
 
-
-# ==========================================================================
-# Command catalogue: (group, [(name, one-line help), ...])
-# ==========================================================================
-CATALOG = [
+# --------------------------------------------------------------------------
+# Command catalogue.  (group, [(name, one-line help), ...])
+# --------------------------------------------------------------------------
+CATALOG: List[Tuple[str, List[Tuple[str, str]]]] = [
     ("Browse & inspect", [
         ("ls",              "List directory contents"),
         ("tree",            "Live directory tree (no cache, streaming)"),
@@ -137,7 +116,7 @@ CATALOG = [
 ]
 
 # Aliases -> canonical command name.
-ALIASES = {
+ALIASES: Dict[str, str] = {
     "tree-gui": "treeui",
     "explorer": "treeui",
     "pc": "computer",
@@ -157,6 +136,9 @@ ALIASES = {
     "du-map": "treemap",
 }
 
+# Commands handled by the live-tree modules (everything else is classic CLI).
+TREE_COMMANDS = {"tree", "treeui", "treemap", "drives", "computer", "computerui"}
+
 # Commands implemented inside fileforge.cli (the classic 40+ command set).
 CLASSIC_COMMANDS = {
     "ls", "find", "grep", "cat", "write", "touch", "cp", "mv", "rm", "mkdir",
@@ -169,67 +151,61 @@ CLASSIC_COMMANDS = {
     "shell", "gui",
 }
 
-# Kept for backwards compatibility with earlier revisions of this launcher.
-TREE_COMMANDS = {"tree", "treeui", "tree-gui", "treemap", "drives", "roots",
-                 "computer", "pc", "thispc", "computerui", "pcgui"}
 
-
-def _all_names():
-    names = []
+def all_command_names() -> List[str]:
+    """Every registered command name, canonical order."""
+    names: List[str] = []
     for _group, entries in CATALOG:
         names.extend(name for name, _help in entries)
     return names
 
 
-def _bootstrap() -> int:
-    try:
-        from fileforge.cli import main
-    except ImportError as exc:  # pragma: no cover
-        print(f"fileforge: failed to import package: {exc}", file=sys.stderr)
-        return 1
-    return main(sys.argv[1:])
+def _closest(word: str, candidates: Sequence[str]) -> Optional[str]:
+    matches = difflib.get_close_matches(word, list(candidates), n=1, cutoff=0.7)
+    return matches[0] if matches else None
 
 
 # --------------------------------------------------------------------------
-# Live-tree / whole-computer handlers
+# Handlers
 # --------------------------------------------------------------------------
-def _classic(argv) -> int:
+def _classic(argv: List[str]) -> int:
     """Delegate to the classic argparse CLI (never back to ``cli.main``)."""
     from fileforge import cli as cli_mod
     handler = getattr(cli_mod, "main_classic", None) or cli_mod.main
     return handler(argv)
 
 
-def _run_tree(rest) -> int:
+def _run_tree(rest: List[str]) -> int:
     from fileforge.treeview import main as tree_main
     return tree_main(rest)
 
 
-def _run_treemap(rest) -> int:
+def _run_treemap(rest: List[str]) -> int:
     from fileforge.treemap import main as treemap_main
     return treemap_main(rest)
 
 
-def _run_treeui(rest) -> int:
+def _run_treeui(rest: List[str]) -> int:
     """Path given -> folder explorer.  No path -> whole computer."""
-    if any(not a.startswith("-") for a in rest):
+    has_path = any(not a.startswith("-") for a in rest)
+    if has_path:
         from fileforge.treeui import main as treeui_main
         return treeui_main(rest)
     from fileforge.computerview import main as pc_main
     return pc_main(rest)
 
 
-def _run_computer(rest) -> int:
+def _run_computer(rest: List[str]) -> int:
     from fileforge.computer import main as computer_main
     return computer_main(rest)
 
 
-def _run_computerui(rest) -> int:
+def _run_computerui(rest: List[str]) -> int:
     from fileforge.computerview import main as pc_main
     return pc_main(rest)
 
 
-def _show_roots() -> int:
+def _run_drives() -> int:
     from fileforge.treeview import system_roots
     from fileforge.utils import free_space, human_size
 
@@ -248,23 +224,29 @@ def _show_roots() -> int:
 def _print_catalog(stream=None) -> None:
     out = stream or sys.stdout
     out.write(f"{APP} - portable local file-system toolkit\n")
-    out.write("Usage: python fileforge.py <command> [options]\n")
-    out.write("       python fileforge.py help              show this list\n")
-    out.write("       python fileforge.py <command> --help  "
-              "options for one command\n\n")
-    width = max(len(n) for _g, entries in CATALOG for n, _h in entries)
+    out.write("Usage: fileforge <command> [options]\n")
+    out.write("       fileforge help                show this list\n")
+    out.write("       fileforge <command> --help    options for one command\n\n")
+    width = max(len(name) for _g, entries in CATALOG for name, _h in entries)
     for group, entries in CATALOG:
         out.write(f"{group}\n")
         for name, help_text in entries:
-            extra = "".join(f" /{a}" for a, t in ALIASES.items() if t == name)
+            extra = ""
+            for alias, target in ALIASES.items():
+                if target == name:
+                    extra += f" /{alias}"
             out.write(f"  {name:<{width}}  {help_text}{extra}\n")
         out.write("\n")
     out.write("Tip: every command supports --help.  Typos are auto-corrected\n")
-    out.write("     (e.g. `computrui` runs `computerui`).\n")
+    out.write("     (e.g. `fileforge computrui` runs `computerui`).\n")
 
 
-def _dispatch(args) -> int:
-    """Full dispatcher.  Returns an exit code."""
+# --------------------------------------------------------------------------
+# Public entry point
+# --------------------------------------------------------------------------
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args: List[str] = list(sys.argv[1:] if argv is None else argv)
+
     if not args or args[0] in ("help", "commands"):
         _print_catalog()
         return 0
@@ -277,9 +259,6 @@ def _dispatch(args) -> int:
     cmd = ALIASES.get(cmd, cmd)
 
     try:
-        if cmd in ("-h", "--help"):
-            _print_catalog()
-            return 0
         if cmd == "tree-classic":
             return _classic(["tree"] + rest)
         if cmd == "tree":
@@ -289,7 +268,7 @@ def _dispatch(args) -> int:
         if cmd == "treemap":
             return _run_treemap(rest)
         if cmd == "drives":
-            return _show_roots()
+            return _run_drives()
         if cmd == "computer":
             return _run_computer(rest)
         if cmd == "computerui":
@@ -299,21 +278,22 @@ def _dispatch(args) -> int:
     except ImportError as exc:
         print(f"{APP}: '{cmd}' needs the fileforge package ({exc})",
               file=sys.stderr)
-        print(f"{APP}: GUI commands need tkinter "
-              f"(Linux: sudo apt install python3-tk)", file=sys.stderr)
+        print(f"{APP}: on Linux install tkinter with: "
+              f"sudo apt install python3-tk", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
         return 130
 
-    # Unknown command - suggest and, when obvious, just run it.
-    known = sorted(set(_all_names()) | set(ALIASES))
-    matches = difflib.get_close_matches(cmd, known, n=1, cutoff=0.7)
-    if matches:
-        guess = ALIASES.get(matches[0], matches[0])
-        if difflib.SequenceMatcher(None, cmd, guess).ratio() >= 0.8:
+    # Unknown command: try to be helpful.
+    known = sorted(set(all_command_names()) | set(ALIASES))
+    guess = _closest(cmd, known)
+    if guess:
+        guess = ALIASES.get(guess, guess)
+        ratio = difflib.SequenceMatcher(None, cmd, guess).ratio()
+        if ratio >= 0.8:
             print(f"{APP}: interpreting '{cmd}' as '{guess}'", file=sys.stderr)
-            return _dispatch([guess] + rest)
+            return main([guess] + rest)
         print(f"{APP}: unknown command '{cmd}' (did you mean '{guess}'?)",
               file=sys.stderr)
     else:
@@ -322,5 +302,11 @@ def _dispatch(args) -> int:
     return 2
 
 
+def gui_main(argv: Optional[Sequence[str]] = None) -> int:
+    """Entry point for ``fileforge-gui``: open the full Tkinter GUI."""
+    args: List[str] = list(sys.argv[1:] if argv is None else argv)
+    return main(["gui"] + args)
+
+
 if __name__ == "__main__":
-    sys.exit(_dispatch(sys.argv[1:]))
+    sys.exit(main())

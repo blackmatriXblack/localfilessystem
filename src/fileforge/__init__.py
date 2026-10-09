@@ -20,5 +20,11 @@ from __future__ import annotations
 
 from .utils import FileForgeError
 
-__version__ = "1.0.0"
-__all__ = ["FileForgeError", "__version__"]
+__version__ = "2.1.0"
+__all__ = ["FileForgeError", "__version__", "main"]
+
+
+def main(argv=None):
+    """Console-script entry point (delegates to :mod:`fileforge.dispatch`)."""
+    from .dispatch import main as _main
+    return _main(argv)

@@ -893,5 +893,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 4
 
 
+# ---------------------------------------------------------------------------
+# Unified command surface.
+#
+# The original argparse entry point is preserved as ``main_classic``.  ``main``
+# now routes every command through :mod:`fileforge.dispatch`, so *all* entry
+# points -- the `fileforge` console script, `python -m fileforge` and the
+# repository launcher -- accept the complete command set including
+# `tree`, `treemap`, `drives`, `computer` and `computerui`.
+# ---------------------------------------------------------------------------
+main_classic = main
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: F811
+    """Dispatch every fileforge command (classic CLI + live tree + This PC)."""
+    try:
+        from .dispatch import main as _dispatch_main
+    except ImportError:  # pragma: no cover - dispatcher missing
+        return main_classic(argv)
+    return _dispatch_main(argv)
+
+
 if __name__ == "__main__":
     sys.exit(main())

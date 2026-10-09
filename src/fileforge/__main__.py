@@ -1,9 +1,9 @@
-"""Allow `python -m fileforge ...`."""
+"""Allow `python -m fileforge ...` (full command set via the dispatcher)."""
 from __future__ import annotations
 
 import sys
 
-from .cli import main
+from .dispatch import main
 
 if __name__ == "__main__":
     sys.exit(main())

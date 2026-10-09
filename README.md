@@ -27,29 +27,50 @@ _|__|  |  |  |   ____   / ____/___  ________  ____ ______   ____
 ```bash
 # from the repository
 python fileforge.py --help                 # list all commands
-python fileforge.py gui                    # graphical interface
+python fileforge.py gui                    # graphical interface (8 tabs)
 python fileforge.py shell                  # interactive shell
 python -m fileforge ls -l .                # run as a module
+
+# see your whole computer immediately
+python fileforge.py computerui             # "This PC" window: every drive, all files
+python fileforge.py computer -L 2          # the same as a text tree
+python fileforge.py tree . -L 3 --du       # live directory tree, no cache
+python fileforge.py drives                 # volumes + free space
+python fileforge.py treemap . --top 25     # terminal disk-usage chart
 ```
 
 ## Install as a pip package
 
-The project ships as a wheel (`dist/fileforge_toolkit-1.0.0-py3-none-any.whl`):
+The project ships as a wheel (`dist/locals_filesystem-2.1.0-py3-none-any.whl`,
+published on PyPI as [`locals-filesystem`](https://pypi.org/project/locals-filesystem/)):
 
 ```bash
-pip install dist/fileforge_toolkit-1.0.0-py3-none-any.whl
+pip install locals-filesystem                              # from PyPI
+pip install dist/locals_filesystem-2.1.0-py3-none-any.whl  # from this folder
 ```
 
-After installation two commands are available everywhere:
+After installation the `fileforge` command is available everywhere and accepts
+**every** command in this README:
 
 ```bash
-fileforge --version        # CLI (all 40+ commands)
+fileforge --version        # 2.1.0
+fileforge help             # full command list
+fileforge computerui       # "This PC" window - all drives, all files
+fileforge computer -L 2    # the same machine as a text tree
+fileforge tree . -L 3 --du # live directory tree, no cache
 fileforge shell            # interactive shell
-fileforge-gui              # graphical interface (no console window)
-fileforge gui              # GUI via the CLI entry point
+fileforge gui              # full GUI (8 tabs)
+fileforge-gui              # GUI without a console window
 ```
 
-To publish to PyPI (once you own the name):
+Aliases and typos are understood, so all of these open the same window:
+
+```bash
+fileforge computerui   fileforge pcgui   fileforge thispcui
+fileforge computrui     # <- typo, auto-corrected
+```
+
+To publish a new version:
 
 ```bash
 python -m build            # rebuild dist/
@@ -57,6 +78,33 @@ twine upload dist/*
 ```
 
 To build from source: `pip install build && python -m build`.
+
+### Every entry point understands every command
+
+`fileforge.dispatch` is the single registry that knows all 57 commands
+(classic CLI + live tree + This PC). It is wired into *all* entry points, so
+they behave identically:
+
+| Entry point | Routes through |
+|---|---|
+| `fileforge <cmd>` (console script) | `fileforge.dispatch:main` |
+| `python -m fileforge <cmd>` | `fileforge/__main__.py` → dispatch |
+| `python fileforge.py <cmd>` | the launcher's own copy of the registry |
+| `fileforge.cli:main` (old entry point) | re-exported to dispatch |
+
+> Rebuild the wheel whenever you want the installed command to pick up the
+> newest modules (`treeview`, `treeui`, `treemap`, `computer`,
+> `computerview`, `dispatch`) — the `dist/` artifacts are a snapshot, not a
+> live copy.
+>
+> **If `pip install` fails while replacing `Scripts\fileforge.exe`** (some
+> sandboxes intercept pip's rename-to-`.deleteme` write), regenerate the
+> launcher with the bundled helper instead:
+>
+> ```bash
+> python make_launchers.py                      # current environment
+> python make_launchers.py <path-to-Scripts>    # another environment
+> ```
 
 ---
 
@@ -71,6 +119,23 @@ To build from source: `pip install build && python -m build`.
 | `stat <path> [--json]` | Detailed metadata (mode, times, inode, counts, MIME) |
 | `filetype <path>` | Content-based MIME detection |
 | `free [path]` | Free / used / total space on a volume |
+
+### Live file tree (no cache)
+
+| Command | Description |
+|---|---|
+| `tree [path] [-L N] [-a] [-d] [-f] [--du] [--stats] [--ext .py] [--include G] [--exclude G] [--min-size 10M] [--max-size 1G] [--newer 7d] [--older 30d] [--sort name\|size\|mtime\|none] [--reverse] [-n N] [--time] [--ascii] [--no-color] [--json F] [--out F] [--top-dirs N] [--max-children N]` | Stream a live tree straight from disk |
+| `treeui [path] [-L N]` | Tkinter live tree explorer for one directory |
+| `treemap [path] [-L N] [--top N] [--mode blocks\|bars\|both] [--width N]` | Terminal block map + ranked bar chart of disk usage |
+| `drives` / `roots` | Every mount point / drive with free space |
+
+### Whole computer ("This PC")
+
+| Command | Description |
+|---|---|
+| `computer [-L N] [--volumes] [--files] [--full-path] [-n N] [--stats] [--max-children N]` | The entire machine as one tree, or a flat file list |
+| `computerui [-L N]` | Window that opens straight onto every drive |
+| `pc` / `thispc` / `pcgui` | Aliases for the two commands above |
 
 ### File content
 
@@ -152,6 +217,111 @@ Size accepts `B, K/KB, M/MB, G/GB, T/TB`. Duration accepts `s, m, h, d, w`
 
 ---
 
+## Live file tree & "This PC"
+
+Everything in this section is read **straight from the disk on every run**.
+There is no cache, no index file, no background crawler: what you see is the
+volume as it is right now.
+
+### `tree` — one directory, streamed
+
+```bash
+python fileforge.py tree                    # current directory, 3 levels
+python fileforge.py tree C:\ -L 2           # drive structure
+python fileforge.py tree . --du --stats     # aggregated folder sizes + totals
+python fileforge.py tree ~/src --ext .py --sort size --stats
+python fileforge.py tree . -L 4 --json tree.json
+python fileforge.py tree C:\ -L 2 --ascii --out C:\Temp\ctree.txt
+python fileforge.py tree . -L 3 --top-dirs 10
+```
+
+`iter_tree()` is a generator: it emits each line the moment it is read, so
+memory stays proportional to the tree *depth*, not its size. Only `--du`,
+`--json` and `treemap` materialise the subtree (aggregation needs it).
+
+### `treemap` — disk usage in the terminal
+
+```bash
+python fileforge.py treemap . -L 3 --top 15 --mode both
+```
+
+Renders a proportional block map of the top level plus a ranked bar chart of
+the largest directories.
+
+### `computerui` — the whole machine, visible at once
+
+```bash
+python fileforge.py computerui          # opens on every drive
+python fileforge.py computerui -L 3
+```
+
+| Tab | What it shows |
+|---|---|
+| **This PC (tree)** | Root is the computer itself; every volume is a child and is expanded automatically in a background thread, rows appearing as they are read |
+| **All files** | Flat table of every file on every volume — full path, size, type, modified — streamed live, cancellable with **Stop** |
+
+Toolbar: `Depth` (auto-expand levels), `Max/folder`, `Hidden`, `Dirs only`,
+`Filter`, `Expand tree`, `Scan files`, `Stop`, `Export`. Right-click on either
+tab: open, reveal in file manager, terminal here, copy path/name, properties,
+SHA-256. `F5` refreshes, `Ctrl+Q` quits.
+
+```
+This PC
+├── C:\                     free 82.37 GB of 392.13 GB
+│   ├── AMD\
+│   ├── cos_build\
+│   │   ├── string.c
+│   │   ├── test.c
+│   │   └── test.o
+│   └── cygwin64\
+├── D:\                     free 1.21 TB of 1.82 TB
+└── E:\                     free 74.70 GB of 83.70 GB
+```
+
+### Why `Max/folder` matters
+
+A single folder can hold hundreds of thousands of entries. On the machine this
+was developed on, `D:\documents` contains **303,676 entries** and needs
+**185 s** merely to enumerate — one folder would stall the entire view.
+`Max/folder` (default **500** in the window) reads only the first N entries of
+each folder and shows a `+ N more entries (not listed)` marker. Set it to `0`
+for unlimited, or raise it when you really need everything.
+
+With the cap in place a whole-machine depth-2 scan finishes in **3 seconds**:
+
+```
+WHOLE MACHINE depth=2: 8258 entries, 2674 dirs, 5585 files  3.0s
+```
+
+### Symlinks, junctions and safety
+
+Symlinks, junctions and Windows reparse points are **skipped by default** —
+`os.scandir` resolves their target, and if that target is an offline network
+share the call blocks for minutes. The check is done *before* the directory is
+opened. Use `--follow-links` (or the option flag) only when you know the tree.
+Unreadable folders are reported inline instead of aborting the scan.
+
+### Library use
+
+```python
+from fileforge.treeview import Options, iter_tree, build_tree, dir_sizes, to_json
+
+for prefix, node, stats in iter_tree("D:/", Options(max_depth=2)):
+    print(prefix + node.name)
+print(stats.as_dict())
+
+tree = build_tree("D:/Projects", Options(max_depth=4))
+print(tree.node.agg_size, tree.node.n_files)
+
+from fileforge.computer import iter_computer_tree, iter_all_files, volumes
+for prefix, node, stats in iter_computer_tree(Options(max_depth=2, max_children=500)):
+    print(prefix + node.name)
+for node in iter_all_files(Options(max_depth=3), max_items=1000):
+    print(node.path)
+```
+
+---
+
 ## Graphical interface
 
 ```bash
@@ -173,6 +343,22 @@ A single window with a directory tree on the left and eight tool tabs:
 
 Extras: light/dark minimal theme toggle, hidden-files toggle, `F5` refresh,
 status bar with live free space, all long jobs run on background threads.
+
+### The two tree windows
+
+Besides the 8-tab interface above there are two dedicated viewers:
+
+```bash
+python fileforge.py treeui D:\ -L 4   # single-directory live tree
+python fileforge.py computerui        # the whole computer ("This PC")
+python fileforge.py treeui            # no path -> opens "This PC"
+```
+
+Both expand lazily (only the branch you open is ever read), offer sortable
+columns, a live filter, an export to `.txt`/`.json`, a light/dark theme and the
+same right-click actions as the main interface. `computerui` adds the
+whole-machine auto-expansion and the streaming "All files" table described
+above.
 
 ## Interactive shell
 
@@ -220,6 +406,17 @@ python fileforge.py merge big.iso ./parts/*
 
 # Mirror a folder, removing files deleted at the source
 python fileforge.py sync ./site ./backup/site --delete
+
+# Explore an unfamiliar machine: every drive, two levels deep
+python fileforge.py computer -L 2 --stats
+python fileforge.py computerui
+
+# Where is my disk space going?
+python fileforge.py treemap . -L 3 --top 20 --mode bars
+python fileforge.py tree ~/Downloads -L 2 --du --sort size
+
+# Every log file on the machine, newest first
+python fileforge.py computer --files --limit 2000 --full-path
 ```
 
 ---
@@ -229,9 +426,10 @@ python fileforge.py sync ./site ./backup/site --delete
 * **Pure stdlib** — no `pip install` required; copies of this folder run anywhere.
 * **Safety first** — extraction guards against path traversal; `--dry-run`
   is available for rename, replace and sync.
-* **Structured core** — `fileforge/*.py` modules (`core`, `search`, `hashutil`,
-  `archive`, `analytics`, `security`, `utils`) can be imported and reused as a
-  library:
+* **Structured core** — `src/fileforge/*.py` modules (`core`, `search`,
+  `hashutil`, `archive`, `analytics`, `security`, `utils`, `treeview`,
+  `treeui`, `treemap`, `computer`, `computerview`) can be imported and reused
+  as a library:
 
 ```python
 from fileforge import core, search, hashutil
@@ -242,6 +440,11 @@ for e in search.find(search.FindCriteria(root=".", extensions=[".py"])):
     print(e.rel, e.size)
 ```
 
+* **Never hangs on a bad link** — the tree scanners detect symlinks, junctions
+  and Windows reparse points *before* opening a directory, because `os.scandir`
+  resolves their target and an offline network share would block for minutes.
+  Huge folders are bounded by `max_children` (500 per folder in the GUI), and
+  unreadable folders are reported inline instead of aborting the scan.
 * **Custom encryption caveat** — `encrypt` / `decrypt` use a self-contained
   PBKDF2 + SHA-256 stream cipher with an HMAC tag. It is dependency-free and
   fine for personal obfuscation, but it is **not audited cryptography**. For
@@ -253,23 +456,67 @@ for e in search.find(search.FindCriteria(root=".", extensions=[".py"])):
 
 ```
 localfilessystem/
-├── fileforge.py            # single-file launcher
+├── fileforge.py            # single-file launcher - full command registry
+├── make_launchers.py       # regenerates fileforge.cmd when pip is blocked
+├── pyproject.toml          # pip package definition (locals-filesystem 2.1.0)
 ├── README.md
-└── fileforge/
-    ├── __init__.py
-    ├── __main__.py         # enables `python -m fileforge`
-    ├── cli.py              # argparse dispatcher + all command impls
-    ├── gui.py              # Tkinter graphical interface
-    ├── repl.py             # interactive shell
-    ├── core.py             # file/dir operations, tree, stat, text tools
-    ├── search.py           # find + grep + size/duration parsing
-    ├── hashutil.py         # hashes, manifest, verify, duplicates, compare
-    ├── archive.py          # zip/tar/gzip, split/merge, sync
-    ├── analytics.py        # du, largest/newest, empty, broken links
-    ├── security.py         # chmod, shred, encryption
-    └── utils.py            # shared helpers, platform detection, output
+├── TREE.md                 # guide to the live tree / This PC views
+├── overview.md
+├── tree_smoke.py           # 54-check live-tree test suite
+├── computer_smoke.py       # 33-check whole-computer test suite
+├── dispatch_smoke.py       # 25-check dispatcher/alias/typo test suite
+├── dist/                   # built wheel + sdist (pip installable)
+└── src/
+    └── fileforge/
+        ├── __init__.py
+        ├── __main__.py         # `python -m fileforge` -> dispatch
+        ├── dispatch.py         # unified registry: every command, aliases,
+        │                       # typo correction.  Console-script entry point
+        ├── cli.py              # classic argparse CLI; `main` -> dispatch,
+        │                       # original kept as `main_classic`
+        ├── gui.py              # Tkinter graphical interface (8 tabs)
+        ├── repl.py             # interactive shell
+        ├── core.py             # file/dir operations, tree, stat, text tools
+        ├── search.py           # find + grep + size/duration parsing
+        ├── hashutil.py         # hashes, manifest, verify, duplicates, compare
+        ├── archive.py          # zip/tar/gzip, split/merge, sync
+        ├── analytics.py        # du, largest/newest, empty, broken links
+        ├── security.py         # chmod, shred, encryption
+        ├── utils.py            # shared helpers, platform detection, output
+        ├── treeview.py         # live cache-free tree scanner + renderer
+        ├── treeui.py           # single-directory Tkinter tree explorer
+        ├── treemap.py          # terminal block map / bar chart
+        ├── computer.py         # whole-machine ("This PC") scanning engine
+        └── computerview.py     # whole-machine Tkinter explorer (2 tabs)
 ```
 
+## Testing
+
+```bash
+python tree_smoke.py        # live tree:    TOTAL 54 passed, 0 failed
+python computer_smoke.py    # This PC:      TOTAL 33 passed, 0 failed
+python dispatch_smoke.py    # dispatcher:   TOTAL 25 passed, 0 failed
+```
+
+`dispatch_smoke.py` checks that every catalogue entry is reachable, that all
+aliases resolve, that `computrui` auto-corrects to `computerui`, that an
+unknown command exits with code 2, and that the launcher's registry and the
+package's registry are identical.
+
+Both suites drive the real CLI as a subprocess, call the library API directly
+and construct the Tkinter windows for real (without a blocking main loop).
+They need `tkinter` for the GUI section, which is skipped automatically when
+it is missing:
+
+```bash
+# Linux
+sudo apt install python3-tk
+```
+
+The original CLI/GUI suites (`smoke_test.py`, `gui_smoke.py`) were written
+against the pre-`src` layout and are no longer part of the tree; the CLI and
+GUI themselves are covered by the two suites above plus
+`python fileforge.py --help`.
 
 ## License
 
