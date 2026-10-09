@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fileforge-toolkit"
+version = "1.0.0"
+description = "Portable local file-system toolkit (CLI + interactive shell + Tkinter GUI) for Linux, Windows and macOS. Pure standard library, zero dependencies."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "goldensakurazero" }]
+keywords = [
+    "filesystem", "file-manager", "file-search", "duplicate-finder",
+    "checksum", "archive", "cross-platform", "cli", "gui", "tkinter",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: X11 Applications",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Desktop Environment :: File Managers",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
+]
+
+[project.scripts]
+fileforge = "fileforge.cli:main"
+
+[project.gui-scripts]
+fileforge-gui = "fileforge.gui:main"
+
+[tool.setuptools]
+packages = ["fileforge"]
