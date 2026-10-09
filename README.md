@@ -457,14 +457,8 @@ for e in search.find(search.FindCriteria(root=".", extensions=[".py"])):
 ```
 localfilessystem/
 ├── fileforge.py            # single-file launcher - full command registry
-├── make_launchers.py       # regenerates fileforge.cmd when pip is blocked
 ├── pyproject.toml          # pip package definition (locals-filesystem 2.1.0)
 ├── README.md
-├── TREE.md                 # guide to the live tree / This PC views
-├── overview.md
-├── tree_smoke.py           # 54-check live-tree test suite
-├── computer_smoke.py       # 33-check whole-computer test suite
-├── dispatch_smoke.py       # 25-check dispatcher/alias/typo test suite
 ├── dist/                   # built wheel + sdist (pip installable)
 └── src/
     └── fileforge/
