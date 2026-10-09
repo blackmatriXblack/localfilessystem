@@ -1,0 +1,5 @@
+[console_scripts]
+fileforge = fileforge.dispatch:main
+
+[gui_scripts]
+fileforge-gui = fileforge.dispatch:gui_main

@@ -21,12 +21,16 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Sequence
 
-from . import archive, analytics, core, hashutil, search, security, utils
+from . import (analytics, archive, core, hashutil, search, security, utils,
+               __version__ as _PKG_VERSION)
 from .utils import (FileForgeError, PathError, error, heading, human_size,
                     human_time, info, ok, paint, warn, _Style)
 
 PROG = "fileforge"
-VERSION = "1.0.0"
+# Single source of truth: the package version. It used to be a hard-coded
+# "1.0.0" here, which made `fileforge --version` report 1.0.0 no matter which
+# release was actually installed.
+VERSION = _PKG_VERSION
 
 
 # --------------------------------------------------------------------------- #

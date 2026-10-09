@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from .utils import FileForgeError
 
-__version__ = "2.1.0"
+__version__ = "7.0.0"
 __all__ = ["FileForgeError", "__version__", "main"]
 
 

@@ -33,11 +33,13 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Callable, List, Optional, Sequence
 
-from . import analytics, archive, core, hashutil, search, security, utils
+from . import (analytics, archive, core, hashutil, search, security, utils,
+               __version__ as _PKG_VERSION)
 from .utils import FileForgeError, human_size, human_time, resolve
 
 APP_TITLE = "fileforge"
-APP_VERSION = "1.0.0"
+# Keep in step with the package version (was a stale hard-coded "1.0.0").
+APP_VERSION = _PKG_VERSION
 
 # --------------------------------------------------------------------------- #
 # Theme (minimal black & white)
