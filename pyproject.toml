@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fileforge-toolkit"
+name = "locals_filesystem"
 version = "1.0.0"
 description = "Portable local file-system toolkit (CLI + interactive shell + Tkinter GUI) for Linux, Windows and macOS. Pure standard library, zero dependencies."
 readme = "README.md"
