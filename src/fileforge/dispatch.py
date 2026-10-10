@@ -79,6 +79,48 @@ CATALOG: List[Tuple[str, List[Tuple[str, str]]]] = [
     ("This PC - safety", [
         ("computeraudit",   "Permission audit (world-writable, setuid, setgid)"),
     ]),
+    ("Files - inspect", [
+        ("filemeta",        "Complete metadata report for one path"),
+        ("filepreview",     "Preview any file: text head or binary hex"),
+        ("filehex",         "Hex dump with offset / length / width control"),
+    ]),
+    ("Files - compare & fix names", [
+        ("filediff",        "Line diff of two files, or inventory diff of two dirs"),
+        ("filesanitize",    "Find (and optionally fix) illegal / reserved names"),
+        ("filenorm",        "Normalise names (Unicode NFC, case, spaces)"),
+    ]),
+    ("Files - content tools", [
+        ("fileextract",     "Pull URLs / e-mails / IPv4 addresses out of a file"),
+        ("fileencode",      "base64 / hex / url-encode a file"),
+        ("filedecode",      "base64 / hex / url-decode a file"),
+    ]),
+    ("Files - housekeeping", [
+        ("filetrim",        "Strip blank lines, trailing whitespace, BOM, CRLF"),
+        ("filesort",        "Sort / de-duplicate the lines of a text file"),
+        ("filebackup",      "Timestamped copy (name.bak-20260101-120000)"),
+    ]),
+    ("Disks - hardware", [
+        ("diskinfo",        "Physical disks: model, serial, bus, media, size"),
+        ("diskpartitions",  "Partition / volume table with mount points"),
+        ("diskfs",          "File system type of every mount point"),
+        ("diskserial",      "Volume serial numbers / UUIDs"),
+    ]),
+    ("Disks - space", [
+        ("diskusage",       "Used vs free per volume, as a block map"),
+        ("diskfree",        "Free space overview + low-space warning"),
+        ("disktop",         "Biggest entries directly under a root / volume"),
+        ("diskmounts",      "Mount points, removable and network drives"),
+    ]),
+    ("Disks - health", [
+        ("diskhealth",      "Health / SMART status of every disk"),
+        ("disktemp",        "Temperature where the platform exposes it"),
+        ("diskio",          "Read / write counters"),
+        ("diskbench",       "Real write / read throughput benchmark"),
+    ]),
+    ("Disks - integrity", [
+        ("diskbadfiles",    "Walk a tree and list files that cannot be read"),
+        ("diskerrors",      "Walk a tree and list directories that fail to list"),
+    ]),
     ("Help", [
         ("help",            "Show this command list"),
         ("legacy",          "List the hidden classic (single-directory) commands"),
@@ -141,6 +183,55 @@ ALIASES: Dict[str, str] = {
     "pcwatch": "computerwatch",
     # --- safety -----------------------------------------------------------
     "pcaudit": "computeraudit",
+    # --- file tools -------------------------------------------------------
+    "fmeta": "filemeta",
+    "fstat": "filemeta",
+    "fpreview": "filepreview",
+    "fcat": "filepreview",
+    "fhex": "filehex",
+    "hexdump": "filehex",
+    "fdiff": "filediff",
+    "fsanitize": "filesanitize",
+    "fnorm": "filenorm",
+    "fextract": "fileextract",
+    "fenc": "fileencode",
+    "fencode": "fileencode",
+    "fdec": "filedecode",
+    "fdecode": "filedecode",
+    "ftrim": "filetrim",
+    "fsort": "filesort",
+    "fbackup": "filebackup",
+    # --- disk tools -------------------------------------------------------
+    "dinfo": "diskinfo",
+    "dpart": "diskpartitions",
+    "dpartitions": "diskpartitions",
+    "dfs": "diskfs",
+    "dusage": "diskusage",
+    "dfree": "diskfree",
+    "dio": "diskio",
+    "dhealth": "diskhealth",
+    "dtemp": "disktemp",
+    "dbench": "diskbench",
+    "dserial": "diskserial",
+    "dbad": "diskbadfiles",
+    "dbadfiles": "diskbadfiles",
+    "derrors": "diskerrors",
+    "dtop": "disktop",
+    "dmounts": "diskmounts",
+}
+
+# Commands implemented by fileforge.filekit (single-file tools).
+FILEKIT_COMMANDS = {
+    "filemeta", "filediff", "filesanitize", "filenorm", "fileextract",
+    "fileencode", "filedecode", "filetrim", "filesort", "filebackup",
+    "filepreview", "filehex",
+}
+
+# Commands implemented by fileforge.diskkit (disk / volume tools).
+DISKKIT_COMMANDS = {
+    "diskinfo", "diskpartitions", "diskfs", "diskusage", "diskfree",
+    "diskio", "diskhealth", "disktemp", "diskbench", "diskserial",
+    "diskbadfiles", "diskerrors", "disktop", "diskmounts",
 }
 
 # Commands implemented by fileforge.computerkit (the "This PC" analysis set).
@@ -305,6 +396,18 @@ def _run_computerkit(cmd: str, rest: List[str]) -> int:
     return kit_run(cmd, rest)
 
 
+def _run_filekit(cmd: str, rest: List[str]) -> int:
+    """Forward to the single-file tools in fileforge.filekit."""
+    from fileforge.filekit import run as kit_run
+    return kit_run(cmd, rest)
+
+
+def _run_diskkit(cmd: str, rest: List[str]) -> int:
+    """Forward to the disk / volume tools in fileforge.diskkit."""
+    from fileforge.diskkit import run as kit_run
+    return kit_run(cmd, rest)
+
+
 def _print_catalog(stream=None, catalog=None) -> None:
     out = stream or sys.stdout
     table = catalog or CATALOG
@@ -353,6 +456,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         if cmd in COMPUTERKIT_COMMANDS:
             return _run_computerkit(cmd, rest)
+        if cmd in FILEKIT_COMMANDS:
+            return _run_filekit(cmd, rest)
+        if cmd in DISKKIT_COMMANDS:
+            return _run_diskkit(cmd, rest)
         if cmd == "tree-classic":
             return _classic(["tree"] + rest)
         if cmd == "tree":

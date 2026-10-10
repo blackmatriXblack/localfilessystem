@@ -114,9 +114,9 @@ safe-delete shim that stops pip.
 ### Every entry point understands every command
 
 `fileforge.dispatch` is the single registry that knows every command
-(26 advertised "This PC" commands + the 40 classic ones kept for backwards
-compatibility). It is wired into *all* entry points, so they behave
-identically:
+(**52 advertised** — 26 "This PC" + 12 file tools + 14 disk tools — plus the
+40 classic ones kept for backwards compatibility). It is wired into *all*
+entry points, so they behave identically:
 
 | Entry point | Routes through |
 |---|---|
@@ -226,6 +226,48 @@ lists the classic single-directory commands, which still work.
 | Command | Aliases | Description |
 |---|---|---|
 | `computeraudit [-n N]` | `pcaudit` | Permission audit (world-writable, setuid, setgid) |
+
+### File tools (`fileforge.filekit`) — 12 commands
+
+Single-file utilities. Nothing is written unless you pass `--apply` / `-o`.
+
+| Command | Aliases | Description |
+|---|---|---|
+| `filemeta <path> [--hash ALGO]` | `fmeta` `fstat` | Size, mode, inode, times, MIME, owner, hash, entry count |
+| `filepreview <path> [--lines N]` | `fpreview` | Text head for text files, hex for binaries, listing for dirs |
+| `filehex <path> [--offset N] [--length N] [--width N]` | `fhex` | Classic offset / hex / ASCII dump |
+| `filediff <a> <b> [--unified] [-i] [--ignore-space] [--ignore-blank]` | `fdiff` | Line diff of two files, or inventory diff of two dirs |
+| `filesanitize <paths...> [--apply] [--windows]` | `fsanitize` | Find (and fix) illegal chars, reserved names, trailing dots |
+| `filenorm <paths...> [--nfc] [--case lower] [--space underscore] [--apply]` | `fnorm` | Unicode NFC, accent stripping, case, space handling |
+| `fileextract <path> [--urls] [--emails] [--ips] [--all] [--unique]` | `fextract` | Pull URLs / e-mails / IPv4 addresses out of a file |
+| `fileencode <path> [--base64\|--hex\|--url] [-o OUT]` | `fenc` | Encode a file |
+| `filedecode <path> [--base64\|--hex\|--url] [-o OUT]` | `fdec` | Decode a file |
+| `filetrim <path> [--blank] [--trailing] [--bom] [--crlf] [--all]` | `ftrim` | Strip blank lines, trailing spaces, BOM, CRLF |
+| `filesort <path> [--unique] [--numeric] [--reverse] [-i]` | `fsort` | Sort / de-duplicate the lines of a text file |
+| `filebackup <path> [--dest D] [--keep N]` | `fbackup` | Timestamped copy + retention pruning |
+
+### Disk tools (`fileforge.diskkit`) — 14 commands
+
+Hardware and volume level. Each platform is queried with the tool it ships
+with (PowerShell on Windows, `lsblk` + `/proc` on Linux, `diskutil` on
+macOS); when a tool is missing the command degrades instead of failing.
+
+| Command | Aliases | Description |
+|---|---|---|
+| `diskinfo` | `dinfo` | Physical disks: model, serial, bus, media, size, health |
+| `diskpartitions` | `dpart` | Partition / volume table with mount points |
+| `diskfs` | `dfs` | File system type (NTFS/ext4/APFS…) of every mount |
+| `diskserial` | `dserial` | Volume serial numbers / UUIDs |
+| `diskusage [--mode blocks\|table\|both]` | `dusage` | Used vs free per volume |
+| `diskfree [--threshold %]` | `dfree` | Free space overview + low-space warning |
+| `disktop [-r DIR] [-n N] [--no-aggregate]` | `dtop` | Biggest entries under a root / volume |
+| `diskmounts` | `dmounts` | Mount points, removable / network / fixed |
+| `diskhealth` | `dhealth` | SMART / health status |
+| `disktemp` | `dtemp` | Temperature where the platform exposes it |
+| `diskio` | `dio` | Read / write counters |
+| `diskbench [--dir D] [--size 64M] [--block 1M]` | `dbench` | Real sequential write/read MB/s + IOPS estimate |
+| `diskbadfiles [-r DIR] [--full]` | `dbad` | Files that cannot be read (media errors) |
+| `diskerrors [-r DIR]` | `derrors` | Directories that fail to list |
 
 Shared options for the scanning commands: `-r/--root DIR` (repeatable —
 restrict the scan to one drive or folder), `-L/--max-depth N`, `-a/--all`,
@@ -363,15 +405,15 @@ SHA-256. `F5` refreshes, `Ctrl+Q` quits.
 
 ```
 This PC
-├── C:\                     free 82.37 GB of 392.13 GB
+├── C:\                    
 │   ├── AMD\
 │   ├── cos_build\
 │   │   ├── string.c
 │   │   ├── test.c
 │   │   └── test.o
 │   └── cygwin64\
-├── D:\                     free 1.21 TB of 1.82 TB
-└── E:\                     free 74.70 GB of 83.70 GB
+├── D:\                    
+└── E:\                     
 ```
 
 ### Why `Max/folder` matters
@@ -531,6 +573,28 @@ python fileforge.py pcdiff monday.json friday.json
 python fileforge.py pcwatch ./project --interval 2   # live change feed
 python fileforge.py pcstats                      # size buckets + age buckets
 python fileforge.py pcexport --format csv --out machine.csv
+
+# --- file workflows -------------------------------------------------------
+python fileforge.py fmeta report.pdf --hash sha256   # full metadata
+python fileforge.py fdiff v1.txt v2.txt --unified    # what changed
+python fileforge.py fsanitize "./bad:name?.txt" --apply
+python fileforge.py fnorm "My File.TXT" --space underscore --case lower --apply
+python fileforge.py fextract notes.md --all --unique # urls / mails / ips
+python fileforge.py fhex firmware.bin --length 256
+python fileforge.py ftrim log.txt --all --in-place
+python fileforge.py fsort words.txt --unique -o words.sorted.txt
+python fileforge.py fbackup important.xlsx --keep 5
+
+# --- disk workflows -------------------------------------------------------
+python fileforge.py dinfo                       # physical disks
+python fileforge.py dpart                       # volumes + mount points
+python fileforge.py dfs                         # file systems
+python fileforge.py dfree --threshold 10        # warn on low space
+python fileforge.py dtop -r . -n 20             # biggest entries here
+python fileforge.py dbench --dir . --size 128M  # real throughput
+python fileforge.py dhealth                     # SMART / health
+python fileforge.py dbad -r D:\Downloads --full # unreadable files
+python fileforge.py derrors -r D:\              # unlistable directories
 ```
 
 ---
@@ -605,6 +669,8 @@ localfilessystem/
         ├── computer.py         # whole-machine ("This PC") scanning engine
         ├── computerview.py     # whole-machine Tkinter explorer (2 tabs)
         ├── computerkit.py      # 21 "This PC" analysis commands (pc* aliases)
+        ├── filekit.py          # 12 single-file tools (f* aliases)
+        ├── diskkit.py          # 14 disk / volume tools (d* aliases)
         └── dispatch.py         # command registry shared by every entry point
 ```
 
@@ -613,14 +679,16 @@ localfilessystem/
 ```bash
 python tree_smoke.py        # live tree:    TOTAL 54 passed, 0 failed
 python computer_smoke.py    # This PC:      TOTAL 33 passed, 0 failed
-python dispatch_smoke.py    # dispatcher:   TOTAL 33 passed, 0 failed
+python dispatch_smoke.py    # dispatcher:   TOTAL 37 passed, 0 failed
 python computerkit_smoke.py # This PC kit:  TOTAL 73 passed, 0 failed
+python filekit_smoke.py     # file tools:   TOTAL 52 passed, 0 failed
+python diskkit_smoke.py     # disk tools:   TOTAL 52 passed, 0 failed
 ```
 
-`computerkit_smoke.py` builds every parser (this is what catches duplicate
-`argparse` options), checks `--help`, then runs all 21 commands against a
-throw-away directory containing duplicates, an empty file and an empty folder
-— so it never touches a real drive.
+The three `*_kit` suites build every parser (this is what catches duplicate
+`argparse` options), check `--help`, then run each command against a
+throw-away directory — so they never touch a real drive.
+`diskkit_smoke.py` also runs a 1 MB benchmark and deletes its test file.
 
 `dispatch_smoke.py` checks that every catalogue entry is reachable, that all
 aliases resolve, that `computrui` auto-corrects to `computerui`, that an
